@@ -1,9 +1,15 @@
+#include "src/database/database.h"
+#include "src/database/studentrepository.h"
+#include "src/ui/studentspage.h"
 #include <QApplication>
+#include <QDir>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QStackedWidget>
+#include <QStandardPaths>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -55,9 +61,7 @@ QWidget *createDashboardPage()
     summaryLayout->setSpacing(16);
 
     const QStringList summaryTitles = {
-        "Students",
-        "Rooms",
-        "Examinations"
+        "Students", "Rooms", "Examinations"
     };
 
     const QStringList summaryDescriptions = {
@@ -77,7 +81,7 @@ QWidget *createDashboardPage()
         auto *title = new QLabel(summaryTitles[i]);
         title->setObjectName("summaryTitle");
 
-        auto *value = new QLabel("Not connected");
+        auto *value = new QLabel("Database connected");
         value->setObjectName("summaryValue");
 
         auto *description = new QLabel(summaryDescriptions[i]);
@@ -94,16 +98,16 @@ QWidget *createDashboardPage()
 
     layout->addLayout(summaryLayout);
 
-    auto *activityTitle = new QLabel("Getting started");
-    activityTitle->setObjectName("sectionHeading");
-    layout->addWidget(activityTitle);
+    auto *sectionHeading = new QLabel("Getting started");
+    sectionHeading->setObjectName("sectionHeading");
+    layout->addWidget(sectionHeading);
 
-    auto *activity = new QFrame;
-    activity->setObjectName("contentSection");
+    auto *content = new QFrame;
+    content->setObjectName("contentSection");
 
-    auto *activityLayout = new QVBoxLayout(activity);
-    activityLayout->setContentsMargins(20, 18, 20, 18);
-    activityLayout->setSpacing(10);
+    auto *contentLayout = new QVBoxLayout(content);
+    contentLayout->setContentsMargins(20, 18, 20, 18);
+    contentLayout->setSpacing(10);
 
     const QStringList tasks = {
         "01   Add student records",
@@ -115,10 +119,10 @@ QWidget *createDashboardPage()
     for (const QString &task : tasks) {
         auto *item = new QLabel(task);
         item->setObjectName("taskItem");
-        activityLayout->addWidget(item);
+        contentLayout->addWidget(item);
     }
 
-    layout->addWidget(activity);
+    layout->addWidget(content);
     layout->addStretch();
 
     return page;
@@ -128,6 +132,41 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     app.setApplicationName("University Seat Matrix Scheduler");
+    app.setOrganizationName("UniversitySeatScheduler");
+
+    const QString dataDirectory =
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+
+    if (dataDirectory.isEmpty() || !QDir().mkpath(dataDirectory)) {
+        QMessageBox::critical(
+            nullptr,
+            "Application startup failed",
+            "The application data directory could not be created.");
+        return 1;
+    }
+
+    Database database;
+
+    const QString databasePath =
+        dataDirectory + "/university.db";
+
+    if (!database.open(databasePath)) {
+        QMessageBox::critical(
+            nullptr,
+            "Database error",
+            "Could not open the database:\n" + database.lastError());
+        return 1;
+    }
+
+    if (!database.initializeSchema()) {
+        QMessageBox::critical(
+            nullptr,
+            "Database error",
+            "Could not initialize the database:\n" + database.lastError());
+        return 1;
+    }
+
+    StudentRepository studentRepository(database.handle());
 
     QWidget window;
     window.setObjectName("mainWindow");
@@ -165,11 +204,7 @@ int main(int argc, char *argv[])
     auto *pages = new QStackedWidget;
 
     const QStringList pageTitles = {
-        "Dashboard",
-        "Students",
-        "Rooms",
-        "Examinations",
-        "Seating Plans"
+        "Dashboard", "Students", "Rooms", "Examinations", "Seating Plans"
     };
 
     const QStringList pageDescriptions = {
@@ -218,8 +253,11 @@ int main(int argc, char *argv[])
         if (i == 0) {
             pages->addWidget(createDashboardPage());
         } else {
-            pages->addWidget(createPage(
-                pageTitles[i], pageDescriptions[i]));
+            if (i == 1) {
+                pages->addWidget(new StudentsPage(&studentRepository));
+            } else {
+                pages->addWidget(createPage(pageTitles[i], pageDescriptions[i]));
+            }
         }
 
         QObject::connect(button, &QPushButton::clicked, &window,
@@ -250,9 +288,7 @@ int main(int argc, char *argv[])
             color: #202938;
         }
 
-        QWidget#mainWindow {
-            background: #F5F7FA;
-        }
+        QWidget#mainWindow { background: #F5F7FA; }
 
         QWidget#sidebar {
             background: #FFFFFF;
@@ -360,9 +396,7 @@ int main(int argc, char *argv[])
             color: #4C5B70;
         }
 
-        QFrame#separator {
-            color: #E2E7EE;
-        }
+        QFrame#separator { color: #E2E7EE; }
 
         QLabel#sidebarFooter {
             font-size: 9px;
