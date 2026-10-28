@@ -15,6 +15,11 @@ find_package(SQLite3 REQUIRED)
 qt_standard_project_setup()
 
 qt_add_executable(university-seat-matrix-scheduler
+    src/database/roomrepository.cpp
+    src/ui/roomspage.h
+    src/ui/roomspage.cpp
+    src/database/roomrepository.h
+    src/models/room.h
     src/ui/studentspage.cpp
     src/ui/studentspage.h
     main.cpp

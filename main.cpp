@@ -1,5 +1,7 @@
 #include "src/database/database.h"
 #include "src/database/studentrepository.h"
+#include "src/database/roomrepository.h"
+#include "src/ui/roomspage.h"
 #include "src/ui/studentspage.h"
 #include <QApplication>
 #include <QDir>
@@ -89,6 +91,9 @@ QWidget *createDashboardPage(Database &database)
 
         auto *value = new QLabel(summaryValues[i]);
         value->setObjectName("summaryValue");
+        value->setProperty(
+            "tableName",
+            QStringList{"students", "rooms", "examinations"}[i]);
 
         auto *description = new QLabel(summaryDescriptions[i]);
         description->setObjectName("summaryDescription");
@@ -173,6 +178,7 @@ int main(int argc, char *argv[])
     }
 
     StudentRepository studentRepository(database.handle());
+    RoomRepository roomRepository(database.handle());
 
     QWidget window;
     window.setObjectName("mainWindow");
@@ -251,6 +257,8 @@ int main(int argc, char *argv[])
         auto *button = new QPushButton(pageTitles[i]);
         button->setObjectName("navButton");
         button->setCheckable(true);
+        button->setAutoExclusive(true);
+        button->setFocusPolicy(Qt::NoFocus);
         button->setCursor(Qt::PointingHandCursor);
 
         sidebarLayout->addWidget(button);
@@ -258,23 +266,33 @@ int main(int argc, char *argv[])
 
         if (i == 0) {
             pages->addWidget(createDashboardPage(database));
+        } else if (i == 1) {
+            pages->addWidget(new StudentsPage(&studentRepository));
+        } else if (i == 2) {
+            pages->addWidget(new RoomsPage(&roomRepository));
         } else {
-            if (i == 1) {
-                pages->addWidget(new StudentsPage(&studentRepository));
-            } else {
-                pages->addWidget(createPage(pageTitles[i], pageDescriptions[i]));
-            }
+            pages->addWidget(createPage(pageTitles[i], pageDescriptions[i]));
         }
 
         QObject::connect(button, &QPushButton::clicked, &window,
-                         [pages, navigationButtons, i]() {
+                         [pages, i]() {
             pages->setCurrentIndex(i);
-
-            for (int j = 0; j < navigationButtons.size(); ++j) {
-                navigationButtons[j]->setChecked(j == i);
-            }
         });
     }
+
+    QObject::connect(pages, &QStackedWidget::currentChanged, &window,
+                     [&database, pages](int index) {
+        if (index != 0)
+            return;
+
+        const auto values = pages->widget(0)->findChildren<QLabel *>(
+            "summaryValue");
+        for (QLabel *value : values) {
+            const QString tableName = value->property("tableName").toString();
+            if (!tableName.isEmpty())
+                value->setText(QString::number(database.countRows(tableName)));
+        }
+    });
 
     sidebarLayout->addStretch();
 
@@ -348,13 +366,7 @@ int main(int argc, char *argv[])
 
         QPushButton#navButton:focus {
             outline: none;
-            border: 1px solid #B8CCF5;
-        }
-
-        QPushButton#navButton:checked:focus {
-            background: #EAF0F8;
-            color: #234875;
-            border: 1px solid #B8CCF5;
+            border: none;
         }
 
         QWidget#topHeader {
