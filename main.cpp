@@ -2,6 +2,8 @@
 #include "src/database/studentrepository.h"
 #include "src/database/roomrepository.h"
 #include "src/database/examinationrepository.h"
+#include "src/database/registrationrepository.h"
+#include "src/ui/registrationspage.h"
 #include "src/ui/examinationspage.h"
 #include "src/ui/roomspage.h"
 #include "src/ui/studentspage.h"
@@ -182,6 +184,7 @@ int main(int argc, char *argv[])
     StudentRepository studentRepository(database.handle());
     RoomRepository roomRepository(database.handle());
     ExaminationRepository examinationRepository(database.handle());
+    RegistrationRepository registrationRepository(database.handle());
 
     QWidget window;
     window.setObjectName("mainWindow");
@@ -219,7 +222,7 @@ int main(int argc, char *argv[])
     auto *pages = new QStackedWidget;
 
     const QStringList pageTitles = {
-        "Dashboard", "Students", "Rooms", "Examinations", "Seating Plans"
+        "Dashboard", "Students", "Rooms", "Examinations", "Registrations", "Seating Plans"
     };
 
     const QStringList pageDescriptions = {
@@ -227,6 +230,7 @@ int main(int argc, char *argv[])
         "Manage student records and registration numbers.",
         "Manage examination rooms and seating capacities.",
         "Create and manage scheduled examinations.",
+        "Register students for examination sessions.",
         "Generate and inspect room-wise seating allocations."
     };
 
@@ -275,6 +279,8 @@ int main(int argc, char *argv[])
             pages->addWidget(new RoomsPage(&roomRepository));
         } else if (i == 3) {
             pages->addWidget(new ExaminationsPage(&examinationRepository));
+        } else if (i == 4) {
+            pages->addWidget(new RegistrationsPage(&registrationRepository));
         } else {
             pages->addWidget(createPage(pageTitles[i], pageDescriptions[i]));
         }

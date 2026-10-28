@@ -19,6 +19,10 @@ qt_add_executable(university-seat-matrix-scheduler
     src/ui/roomspage.h
     src/ui/roomspage.cpp
     src/ui/examinationspage.cpp
+    src/database/registrationrepository.h
+    src/database/registrationrepository.cpp
+    src/ui/registrationspage.h
+    src/ui/registrationspage.cpp
     src/ui/examinationspage.h
     src/database/examinationrepository.cpp
     src/database/examinationrepository.h
