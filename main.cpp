@@ -276,7 +276,9 @@ int main(int argc, char *argv[])
     footer->setObjectName("sidebarFooter");
     sidebarLayout->addWidget(footer);
 
-    navigationButtons.first()->setChecked(true);
+    for (int i = 0; i < navigationButtons.size(); ++i) {
+        navigationButtons[i]->setChecked(i == 0);
+    }
 
     root->addWidget(sidebar);
     root->addWidget(workspace, 1);
@@ -326,15 +328,27 @@ int main(int argc, char *argv[])
             font-weight: 500;
         }
 
-        QPushButton#navButton:hover {
+        QPushButton#navButton:hover:!checked {
             background: #F1F4F8;
             color: #1F3558;
         }
 
-        QPushButton#navButton:checked {
+        QPushButton#navButton:checked,
+        QPushButton#navButton:checked:hover {
             background: #EAF0F8;
             color: #234875;
             font-weight: 700;
+        }
+
+        QPushButton#navButton:focus {
+            outline: none;
+            border: 1px solid #B8CCF5;
+        }
+
+        QPushButton#navButton:checked:focus {
+            background: #EAF0F8;
+            color: #234875;
+            border: 1px solid #B8CCF5;
         }
 
         QWidget#topHeader {
