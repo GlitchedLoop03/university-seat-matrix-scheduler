@@ -1,6 +1,8 @@
 #include "src/database/database.h"
 #include "src/database/studentrepository.h"
 #include "src/database/roomrepository.h"
+#include "src/database/examinationrepository.h"
+#include "src/ui/examinationspage.h"
 #include "src/ui/roomspage.h"
 #include "src/ui/studentspage.h"
 #include <QApplication>
@@ -179,6 +181,7 @@ int main(int argc, char *argv[])
 
     StudentRepository studentRepository(database.handle());
     RoomRepository roomRepository(database.handle());
+    ExaminationRepository examinationRepository(database.handle());
 
     QWidget window;
     window.setObjectName("mainWindow");
@@ -270,6 +273,8 @@ int main(int argc, char *argv[])
             pages->addWidget(new StudentsPage(&studentRepository));
         } else if (i == 2) {
             pages->addWidget(new RoomsPage(&roomRepository));
+        } else if (i == 3) {
+            pages->addWidget(new ExaminationsPage(&examinationRepository));
         } else {
             pages->addWidget(createPage(pageTitles[i], pageDescriptions[i]));
         }
