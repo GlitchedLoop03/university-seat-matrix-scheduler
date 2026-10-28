@@ -171,3 +171,55 @@ bool StudentRepository::deleteStudent(int id)
     m_lastError.clear();
     return true;
 }
+
+
+bool StudentRepository::updateStudent(const Student &student)
+{
+    if (!m_db) {
+        m_lastError = "Database connection is not available.";
+        return false;
+    }
+
+    const QString registrationNumber = student.registrationNumber.trimmed();
+    const QString name = student.name.trimmed();
+    const QString department = student.department.trimmed();
+
+    if (student.id <= 0 || registrationNumber.isEmpty()
+        || name.isEmpty() || department.isEmpty()) {
+        m_lastError = "A valid student ID and all fields are required.";
+        return false;
+    }
+
+    const char *sql =
+        "UPDATE students "
+        "SET registration_number = ?, name = ?, department = ? "
+        "WHERE id = ?;";
+
+    sqlite3_stmt *statement = nullptr;
+
+    if (sqlite3_prepare_v2(m_db, sql, -1, &statement, nullptr)
+        != SQLITE_OK) {
+        m_lastError = QString::fromUtf8(sqlite3_errmsg(m_db));
+        return false;
+    }
+
+    sqlite3_bind_text(statement, 1, registrationNumber.toUtf8().constData(),
+                      -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(statement, 2, name.toUtf8().constData(),
+                      -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(statement, 3, department.toUtf8().constData(),
+                      -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(statement, 4, student.id);
+
+    const int result = sqlite3_step(statement);
+    const bool success = result == SQLITE_DONE;
+
+    if (!success) {
+        m_lastError = QString::fromUtf8(sqlite3_errmsg(m_db));
+    } else {
+        m_lastError.clear();
+    }
+
+    sqlite3_finalize(statement);
+    return success;
+}

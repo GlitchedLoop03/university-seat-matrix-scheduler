@@ -14,6 +14,7 @@ public:
     explicit StudentRepository(sqlite3 *database);
 
     bool addStudent(const Student &student);
+    bool updateStudent(const Student &student);
     bool deleteStudent(int id);
     QVector<Student> getAllStudents();
 
