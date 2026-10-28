@@ -1,4 +1,5 @@
 #include "database.h"
+#include <QStringList>
 
 #include <sqlite3.h>
 
@@ -131,4 +132,40 @@ bool Database::isOpen() const
 sqlite3 *Database::handle() const
 {
     return m_db;
+}
+
+int Database::countRows(const QString &tableName) const
+{
+    if (!m_db) {
+        return -1;
+    }
+
+    const QStringList allowedTables = {
+        "students",
+        "rooms",
+        "examinations"
+    };
+
+    if (!allowedTables.contains(tableName)) {
+        return -1;
+    }
+
+    const QString sql = "SELECT COUNT(*) FROM " + tableName + ";";
+
+    sqlite3_stmt *statement = nullptr;
+
+    if (sqlite3_prepare_v2(
+            m_db, sql.toUtf8().constData(), -1, &statement, nullptr
+        ) != SQLITE_OK) {
+        return -1;
+    }
+
+    int count = -1;
+
+    if (sqlite3_step(statement) == SQLITE_ROW) {
+        count = sqlite3_column_int(statement, 0);
+    }
+
+    sqlite3_finalize(statement);
+    return count;
 }

@@ -20,6 +20,7 @@ public:
     QString lastError() const;
     bool isOpen() const;
     sqlite3 *handle() const;
+    int countRows(const QString &tableName) const;
 
 private:
     sqlite3 *m_db;

@@ -40,7 +40,7 @@ QWidget *createPage(const QString &title, const QString &description)
     return page;
 }
 
-QWidget *createDashboardPage()
+QWidget *createDashboardPage(Database &database)
 {
     auto *page = new QWidget;
     auto *layout = new QVBoxLayout(page);
@@ -70,6 +70,12 @@ QWidget *createDashboardPage()
         "Scheduled examination sessions"
     };
 
+    const QStringList summaryValues = {
+        QString::number(database.countRows("students")),
+        QString::number(database.countRows("rooms")),
+        QString::number(database.countRows("examinations"))
+    };
+
     for (int i = 0; i < summaryTitles.size(); ++i) {
         auto *section = new QFrame;
         section->setObjectName("summarySection");
@@ -81,7 +87,7 @@ QWidget *createDashboardPage()
         auto *title = new QLabel(summaryTitles[i]);
         title->setObjectName("summaryTitle");
 
-        auto *value = new QLabel("Database connected");
+        auto *value = new QLabel(summaryValues[i]);
         value->setObjectName("summaryValue");
 
         auto *description = new QLabel(summaryDescriptions[i]);
@@ -251,7 +257,7 @@ int main(int argc, char *argv[])
         navigationButtons.append(button);
 
         if (i == 0) {
-            pages->addWidget(createDashboardPage());
+            pages->addWidget(createDashboardPage(database));
         } else {
             if (i == 1) {
                 pages->addWidget(new StudentsPage(&studentRepository));
