@@ -66,8 +66,38 @@ void StudentsPage::setupUi()
         "}"
     );
 
+    auto *deleteButton = new QPushButton("Delete student", this);
+    deleteButton->setCursor(Qt::PointingHandCursor);
+    deleteButton->setEnabled(true);
+    deleteButton->setStyleSheet(
+        "QPushButton {"
+        " background-color: #FFFFFF;"
+        " color: #B42318;"
+        " border: 1px solid #F0C7C3;"
+        " border-radius: 6px;"
+        " padding: 10px 16px;"
+        " font-weight: 600;"
+        "}"
+        "QPushButton:hover:enabled {"
+        " background-color: #FFF1F0;"
+        "}"
+        "QPushButton:disabled {"
+        " color: #A0A7B4;"
+        " border-color: #E3E7EE;"
+        "}"
+    );
+
     topRow->addStretch();
+    topRow->addWidget(deleteButton);
     topRow->addWidget(addButton);
+
+    connect(
+        deleteButton,
+        &QPushButton::clicked,
+        this,
+        &StudentsPage::deleteSelectedStudent
+    );
+
 
     m_table = new QTableWidget(this);
     m_table->setColumnCount(3);
@@ -131,9 +161,10 @@ void StudentsPage::loadStudents()
         const int row = m_table->rowCount();
         m_table->insertRow(row);
 
-        m_table->setItem(
-            row, 0, new QTableWidgetItem(student.registrationNumber)
-        );
+        auto *registrationItem =
+            new QTableWidgetItem(student.registrationNumber);
+        registrationItem->setData(Qt::UserRole, student.id);
+        m_table->setItem(row, 0, registrationItem);
         m_table->setItem(
             row, 1, new QTableWidgetItem(student.name)
         );
@@ -252,6 +283,79 @@ void StudentsPage::showAddStudentDialog()
         QMessageBox::warning(
             this,
             "Could not save student",
+            m_repository
+                ? m_repository->lastError()
+                : "The student repository is not available."
+        );
+        return;
+    }
+
+    loadStudents();
+}
+
+void StudentsPage::deleteSelectedStudent()
+{
+    const int row = m_table->currentRow();
+
+    if (row < 0) {
+        return;
+    }
+
+    QTableWidgetItem *item = m_table->item(row, 0);
+
+    if (!item) {
+        return;
+    }
+
+    const int studentId = item->data(Qt::UserRole).toInt();
+    const QString registrationNumber = item->text();
+
+    QMessageBox confirmation(this);
+    confirmation.setWindowTitle("Delete student");
+    confirmation.setIcon(QMessageBox::Warning);
+    confirmation.setText(
+        "Delete student " + registrationNumber + "?"
+    );
+    confirmation.setInformativeText(
+        "This may also remove associated examination registrations "
+        "and seat allocations."
+    );
+    confirmation.setStandardButtons(
+        QMessageBox::Yes | QMessageBox::Cancel
+    );
+    confirmation.setDefaultButton(QMessageBox::Cancel);
+    confirmation.setStyleSheet(R"(
+        QMessageBox {
+            background-color: #FFFFFF;
+            color: #202938;
+        }
+        QLabel {
+            color: #202938;
+            background-color: transparent;
+        }
+        QPushButton {
+            background-color: #F3F5F9;
+            color: #273449;
+            border: 1px solid #D6DCE5;
+            border-radius: 5px;
+            padding: 7px 16px;
+            min-width: 70px;
+        }
+        QPushButton:hover {
+            background-color: #E8EDF5;
+        }
+    )");
+
+    const auto answer = confirmation.exec();
+
+    if (answer != QMessageBox::Yes) {
+        return;
+    }
+
+    if (!m_repository || !m_repository->deleteStudent(studentId)) {
+        QMessageBox::warning(
+            this,
+            "Could not delete student",
             m_repository
                 ? m_repository->lastError()
                 : "The student repository is not available."

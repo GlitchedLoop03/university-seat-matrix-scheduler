@@ -20,6 +20,7 @@ private:
     void setupUi();
     void loadStudents();
     void showAddStudentDialog();
+    void deleteSelectedStudent();
 
     StudentRepository *m_repository;
     QTableWidget *m_table;

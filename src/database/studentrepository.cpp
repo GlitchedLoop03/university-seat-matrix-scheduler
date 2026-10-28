@@ -133,3 +133,41 @@ QString StudentRepository::lastError() const
 {
     return m_lastError;
 }
+
+bool StudentRepository::deleteStudent(int id)
+{
+    if (!m_db) {
+        m_lastError = "Database connection is not available.";
+        return false;
+    }
+
+    sqlite3_stmt *statement = nullptr;
+
+    const char *sql = "DELETE FROM students WHERE id = ?;";
+
+    if (sqlite3_prepare_v2(m_db, sql, -1, &statement, nullptr)
+        != SQLITE_OK) {
+        m_lastError = QString::fromUtf8(sqlite3_errmsg(m_db));
+        return false;
+    }
+
+    sqlite3_bind_int(statement, 1, id);
+
+    const int result = sqlite3_step(statement);
+    const int changes = sqlite3_changes(m_db);
+
+    sqlite3_finalize(statement);
+
+    if (result != SQLITE_DONE) {
+        m_lastError = QString::fromUtf8(sqlite3_errmsg(m_db));
+        return false;
+    }
+
+    if (changes == 0) {
+        m_lastError = "The student record no longer exists.";
+        return false;
+    }
+
+    m_lastError.clear();
+    return true;
+}
