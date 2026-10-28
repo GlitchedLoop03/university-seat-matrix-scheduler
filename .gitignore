@@ -1,12 +1,28 @@
 # CMake build output
-build/
-cmake-build-*/
+/build/
+/cmake-build-*/
 
 # Compiled files
 *.o
+*.obj
 *.a
 *.so
-*.out
+*.dll
+*.exe
+*.app
 
-# Qt Creator user-specific files
-CMakeLists.txt.user*
+# SQLite databases and database sidecar files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Editor and operating-system files
+*~
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/

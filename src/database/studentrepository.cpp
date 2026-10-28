@@ -29,6 +29,30 @@ bool StudentRepository::addStudent(const Student &student)
         return false;
     }
 
+    sqlite3_stmt *check = nullptr;
+    const char *checkSql =
+        "SELECT 1 FROM students "
+        "WHERE registration_number = ? COLLATE NOCASE LIMIT 1;";
+
+    if (sqlite3_prepare_v2(m_db, checkSql, -1, &check, nullptr) != SQLITE_OK) {
+        m_lastError = QString::fromUtf8(sqlite3_errmsg(m_db));
+        return false;
+    }
+
+    const QByteArray checkBytes = registrationNumber.toUtf8();
+    sqlite3_bind_text(check, 1, checkBytes.constData(), -1, SQLITE_TRANSIENT);
+    const int checkResult = sqlite3_step(check);
+    sqlite3_finalize(check);
+
+    if (checkResult == SQLITE_ROW) {
+        m_lastError = "That registration number already exists.";
+        return false;
+    }
+    if (checkResult != SQLITE_DONE) {
+        m_lastError = QString::fromUtf8(sqlite3_errmsg(m_db));
+        return false;
+    }
+
     const char *sql = R"(
         INSERT INTO students (registration_number, name, department)
         VALUES (?, ?, ?);
@@ -187,6 +211,31 @@ bool StudentRepository::updateStudent(const Student &student)
     if (student.id <= 0 || registrationNumber.isEmpty()
         || name.isEmpty() || department.isEmpty()) {
         m_lastError = "A valid student ID and all fields are required.";
+        return false;
+    }
+
+    sqlite3_stmt *check = nullptr;
+    const char *checkSql =
+        "SELECT 1 FROM students "
+        "WHERE registration_number = ? COLLATE NOCASE AND id <> ? LIMIT 1;";
+
+    if (sqlite3_prepare_v2(m_db, checkSql, -1, &check, nullptr) != SQLITE_OK) {
+        m_lastError = QString::fromUtf8(sqlite3_errmsg(m_db));
+        return false;
+    }
+
+    const QByteArray checkBytes = registrationNumber.toUtf8();
+    sqlite3_bind_text(check, 1, checkBytes.constData(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(check, 2, student.id);
+    const int checkResult = sqlite3_step(check);
+    sqlite3_finalize(check);
+
+    if (checkResult == SQLITE_ROW) {
+        m_lastError = "That registration number already belongs to another student.";
+        return false;
+    }
+    if (checkResult != SQLITE_DONE) {
+        m_lastError = QString::fromUtf8(sqlite3_errmsg(m_db));
         return false;
     }
 

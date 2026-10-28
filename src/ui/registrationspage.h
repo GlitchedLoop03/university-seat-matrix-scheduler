@@ -15,6 +15,7 @@ class RegistrationsPage : public QWidget {
 public:
     explicit RegistrationsPage(RegistrationRepository *repository,
                                QWidget *parent = nullptr);
+    void refresh();
 
 private:
     RegistrationRepository *m_repository;

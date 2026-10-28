@@ -4,10 +4,15 @@
 #include "src/database/examinationrepository.h"
 #include "src/database/registrationrepository.h"
 #include "src/ui/registrationspage.h"
+#include "src/database/seatingplanrepository.h"
+#include "src/ui/seatingplanspage.h"
 #include "src/ui/examinationspage.h"
 #include "src/ui/roomspage.h"
 #include "src/ui/studentspage.h"
 #include <QApplication>
+#include <QColor>
+#include <QStyleFactory>
+#include <QPalette>
 #include <QDir>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -146,6 +151,26 @@ QWidget *createDashboardPage(Database &database)
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    // Use a consistent light palette for Qt dialogs and standard controls.
+    app.setStyle(QStyleFactory::create("Fusion"));
+
+    QPalette lightPalette;
+    lightPalette.setColor(QPalette::Window, QColor("#FFFFFF"));
+    lightPalette.setColor(QPalette::WindowText, QColor("#202938"));
+    lightPalette.setColor(QPalette::Base, QColor("#FFFFFF"));
+    lightPalette.setColor(QPalette::AlternateBase, QColor("#F5F7FA"));
+    lightPalette.setColor(QPalette::Text, QColor("#202938"));
+    lightPalette.setColor(QPalette::Button, QColor("#F3F5F9"));
+    lightPalette.setColor(QPalette::ButtonText, QColor("#273449"));
+    lightPalette.setColor(QPalette::Highlight, QColor("#DCE7FF"));
+    lightPalette.setColor(QPalette::HighlightedText, QColor("#172554"));
+    lightPalette.setColor(QPalette::Disabled, QPalette::Text,
+                          QColor("#929AAA"));
+    lightPalette.setColor(QPalette::Disabled, QPalette::ButtonText,
+                          QColor("#929AAA"));
+    app.setPalette(lightPalette);
+
     app.setApplicationName("University Seat Matrix Scheduler");
     app.setOrganizationName("UniversitySeatScheduler");
 
@@ -185,12 +210,13 @@ int main(int argc, char *argv[])
     RoomRepository roomRepository(database.handle());
     ExaminationRepository examinationRepository(database.handle());
     RegistrationRepository registrationRepository(database.handle());
+    SeatingPlanRepository seatingPlanRepository(database.handle());
 
     QWidget window;
     window.setObjectName("mainWindow");
     window.setWindowTitle("University Seat Matrix Scheduler");
     window.resize(1100, 720);
-    window.setMinimumSize(850, 560);
+    window.setMinimumSize(700, 480);
 
     auto *root = new QHBoxLayout(&window);
     root->setContentsMargins(0, 0, 0, 0);
@@ -198,7 +224,7 @@ int main(int argc, char *argv[])
 
     auto *sidebar = new QWidget;
     sidebar->setObjectName("sidebar");
-    sidebar->setFixedWidth(220);
+    sidebar->setFixedWidth(190);
 
     auto *sidebarLayout = new QVBoxLayout(sidebar);
     sidebarLayout->setContentsMargins(20, 24, 20, 20);
@@ -281,6 +307,8 @@ int main(int argc, char *argv[])
             pages->addWidget(new ExaminationsPage(&examinationRepository));
         } else if (i == 4) {
             pages->addWidget(new RegistrationsPage(&registrationRepository));
+        } else if (i == 5) {
+            pages->addWidget(new SeatingPlansPage(&seatingPlanRepository));
         } else {
             pages->addWidget(createPage(pageTitles[i], pageDescriptions[i]));
         }
@@ -302,6 +330,16 @@ int main(int argc, char *argv[])
             const QString tableName = value->property("tableName").toString();
             if (!tableName.isEmpty())
                 value->setText(QString::number(database.countRows(tableName)));
+        }
+    });
+
+    QObject::connect(pages, &QStackedWidget::currentChanged, &window,
+                     [pages](int index) {
+        if (index == 4) {
+            auto *registrationPage =
+                qobject_cast<RegistrationsPage *>(pages->widget(4));
+            if (registrationPage)
+                registrationPage->refresh();
         }
     });
 
@@ -446,6 +484,7 @@ int main(int argc, char *argv[])
             color: #9AA4B2;
             letter-spacing: 0.5px;
         }
+
     )");
 
     window.show();

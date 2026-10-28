@@ -122,6 +122,17 @@ void RegistrationsPage::setupUi()
             this, &RegistrationsPage::updateActionButtons);
 }
 
+void RegistrationsPage::refresh()
+{
+    const int previousExaminationId = selectedExaminationId();
+    loadExaminations();
+
+    const int previousIndex =
+        m_examinationCombo->findData(previousExaminationId);
+    if (previousIndex >= 0)
+        m_examinationCombo->setCurrentIndex(previousIndex);
+}
+
 void RegistrationsPage::loadExaminations()
 {
     m_examinationCombo->clear();
