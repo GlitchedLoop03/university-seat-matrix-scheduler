@@ -1,0 +1,12 @@
+# CMake build output
+build/
+cmake-build-*/
+
+# Compiled files
+*.o
+*.a
+*.so
+*.out
+
+# Qt Creator user-specific files
+CMakeLists.txt.user*
