@@ -342,6 +342,15 @@ int main(int argc, char *argv[])
                 registrationPage->refresh();
         }
     });
+QObject::connect(pages, &QStackedWidget::currentChanged, &window,
+                 [pages](int index) {
+    if (index == 5) {
+        auto *seatingPage =
+            qobject_cast<SeatingPlansPage *>(pages->widget(5));
+        if (seatingPage)
+            seatingPage->refresh();
+    }
+});
 
     sidebarLayout->addStretch();
 
